@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Resultados de Validación</h1>
+        <div class="row mt-4">
+            <div class="col">
+                <h3>Correos Aprobados</h3>
+                <ul class="list-group">
+                    <% results.approved.forEach(email => { %>
+                        <li class="list-group-item"><%= email %></li>
+                    <% }) %>
+                </ul>
+            </div>
+            <div class="col">
+                <h3>Correos No Aprobados</h3>
+                <ul class="list-group">
+                    <% results.notApproved.forEach(email => { %>
+                        <li class="list-group-item"><%= email %></li>
+                    <% }) %>
+                </ul>
+            </div>
+            <div class="col">
+                <h3>Bouncing</h3>
+                <ul class="list-group">
+                    <% results.bouncing.forEach(email => { %>
+                        <li class="list-group-item"><%= email %></li>
+                    <% }) %>
+                </ul>
+            </div>
+        </div>
+        <div class="text-center mt-4">
+            <a href="/email/export" class="btn btn-primary">Exportar Resultados</a>
+        </div>
+    </div>
+</body>
+</html>
