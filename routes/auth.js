@@ -1,5 +1,6 @@
 const express = require('express');
 const { google } = require('googleapis');
+const nodemailer = require('nodemailer');
 const router = express.Router();
 
 // Crear el cliente OAuth2 usando las credenciales de tu archivo .env
@@ -89,6 +90,55 @@ router.get('/refresh-token', async (req, res) => {
     } catch (error) {
         console.error('Error al refrescar el token de acceso:', error.message);
         res.status(500).send('Error al refrescar el token de acceso');
+    }
+});
+
+// Ruta para enviar un correo utilizando nodemailer y el token de acceso
+router.post('/send', async (req, res) => {
+    if (!req.session.tokens || !req.session.tokens.access_token) {
+        return res.status(400).send('No se encontraron tokens de acceso en la sesión');
+    }
+
+    const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        'https://appmail.teamcomunicaciones.com/auth/google/callback'
+    );
+
+    oauth2Client.setCredentials(req.session.tokens);
+
+    try {
+        // Verificar si el token de acceso ha expirado y obtener uno nuevo si es necesario
+        const accessToken = await oauth2Client.getAccessToken();
+        
+        // Configurar el transportador de nodemailer con OAuth2
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                type: 'OAuth2',
+                user: 'mirko13084@gmail.com', // Tu correo de Gmail
+                clientId: process.env.GOOGLE_CLIENT_ID,
+                clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+                refreshToken: req.session.tokens.refresh_token,
+                accessToken: accessToken.token, // Usar el token de acceso renovado
+            },
+        });
+
+        // Configuración del correo
+        const mailOptions = {
+            from: 'mirko13084@gmail.com',
+            to: req.body.to, // Dirección del destinatario
+            subject: req.body.subject, // Asunto
+            text: req.body.text, // Cuerpo del mensaje
+        };
+
+        // Enviar el correo
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Correo enviado:', info.response);
+        res.status(200).send('Correo enviado con éxito');
+    } catch (error) {
+        console.error('Error al enviar correo:', error.message);
+        res.status(500).send('Error al enviar correo');
     }
 });
 
