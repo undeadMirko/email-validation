@@ -55,10 +55,9 @@ router.get('/validate', async (req, res) => {
     }
 
     req.session.results = { approved, notApproved, bouncing };
-    console.log('Resultados de validación guardados en la sesión:', req.session.results);  // Debug
+    console.log('Resultados de validación guardados en la sesión:', req.session.results);  // Depuración
     res.redirect('/results');
 });
-
 
 // Envía correos de prueba a los aprobados
 router.get('/send', async (req, res) => {
