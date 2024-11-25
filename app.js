@@ -20,6 +20,10 @@ app.use(bodyParser.json());
 app.use(fileUpload());
 app.use(session({ secret: 'your_secret_key', resave: false, saveUninitialized: true }));
 
+app.use(fileUpload({
+    limits: { fileSize: 0 } // 0 significa sin límite de tamaño de archivo
+}));
+
 // Routes
 const authRoutes = require('./routes/auth');
 const excelRoutes = require('./routes/excel');
