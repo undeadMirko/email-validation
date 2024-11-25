@@ -50,7 +50,18 @@ app.get('/results', (req, res) => {
     res.render('result', { results }); // Renderiza los resultados
 });
 
+require('dotenv').config(); // Carga las variables de entorno del archivo .env
 
+// Verificación de las variables de entorno
+console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID); 
+console.log('GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET); 
+console.log('GOOGLE_REDIRECT_URI:', process.env.GOOGLE_REDIRECT_URI);
+
+// Si alguna de estas variables está vacía o es undefined, muestra un error y termina la ejecución
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REDIRECT_URI) {
+    console.error("Falta alguna de las credenciales de Google en el archivo .env.");
+    process.exit(1); // Detiene la ejecución si no se encuentran las variables
+}
 
 // Mostrar todas las rutas disponibles usando express-list-endpoints
 app.listen(PORT, () => {
