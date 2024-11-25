@@ -49,9 +49,12 @@ const getAccessToken = async (oauth2Client) => {
         if (error.message.includes('invalid_grant')) {
             throw new Error('El refresh token ha caducado. El usuario necesita reautenticarse.');
         }
+        // Mostrar más detalles del error para depurar
+        console.error('Detalles del error:', error);
         throw new Error('No se pudo obtener el access token');
     }
 };
+
 
 // Ruta para validar los correos y enviar los aprobados
 router.get('/validate', async (req, res) => {
