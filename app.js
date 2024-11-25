@@ -24,9 +24,17 @@ const authRoutes = require('./routes/auth');
 const excelRoutes = require('./routes/excel');
 const emailRoutes = require('./routes/email');
 
+// Registrando las rutas
 app.use('/auth', authRoutes);
 app.use('/excel', excelRoutes);
 app.use('/email', emailRoutes);
+
+// Mostrar todas las rutas disponibles
+app._router.stack.forEach((middleware) => {
+  if (middleware.route) {
+    console.log(`${middleware.route.path}`);
+  }
+});
 
 app.get('/', (req, res) => res.render('home'));
 
