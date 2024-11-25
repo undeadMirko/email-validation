@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const { google } = require('googleapis');
 
+// Valida si el correo tiene formato correcto y un dominio con registros MX
 const validateEmail = async (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!regex.test(email)) return false;
@@ -20,11 +21,13 @@ const validateEmail = async (email) => {
     }
 };
 
+// Detecta palabras clave no válidas en el correo
 const containsInvalidKeywords = (email) => {
     const keywords = ['no.tiene', 'tiene', 'no.email'];
     return keywords.some(keyword => email.includes(keyword));
 };
 
+// Valida la lista de correos
 router.get('/validate', async (req, res) => {
     const emails = req.session.emails || [];
     const approved = [];
@@ -56,6 +59,7 @@ router.get('/validate', async (req, res) => {
     res.redirect('/results');
 });
 
+// Envía correos de prueba a los aprobados
 router.get('/send', async (req, res) => {
     const { approved } = req.session.results || { approved: [] };
 
@@ -86,7 +90,7 @@ router.get('/send', async (req, res) => {
         },
     });
 
-    req.session.results.bouncing = req.session.results.bouncing || []; // Asegurar la lista de rebotados
+    req.session.results.bouncing = req.session.results.bouncing || [];
 
     for (const email of approved) {
         try {
@@ -100,7 +104,7 @@ router.get('/send', async (req, res) => {
         } catch (error) {
             console.error(`Error enviando correo a ${email}:`, error.message);
             if (!req.session.results.bouncing.includes(email)) {
-                req.session.results.bouncing.push(email); // Marcar como rebotado si falla el envío
+                req.session.results.bouncing.push(email);
             }
         }
     }
@@ -109,7 +113,7 @@ router.get('/send', async (req, res) => {
     res.redirect('/results');
 });
 
-
+// Lee los correos rebotados desde Gmail
 router.get('/read-bounced', async (req, res) => {
     const oauth2Client = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
@@ -161,7 +165,7 @@ router.get('/read-bounced', async (req, res) => {
     }
 });
 
-
+// Exporta los resultados a un archivo Excel y lo envía por correo
 router.get('/export', (req, res) => {
     const { approved, notApproved, bouncing } = req.session.results || {};
     const workbook = XLSX.utils.book_new();
