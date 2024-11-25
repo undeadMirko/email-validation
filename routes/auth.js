@@ -22,10 +22,9 @@ router.get('/login', (req, res) => {
 // Ruta de callback que Google llama después de la autenticación
 router.get('/callback', async (req, res) => {
     console.log('Callback recibido de Google...');
-    
-    // Verifica que el código esté presente
+    console.log('Parámetros de la solicitud:', req.query);  // Verifica los parámetros de la solicitud
+
     const { code } = req.query;
-    console.log('Código recibido en el callback:', code);  // Verifica el código recibido
     if (!code) {
         console.error('No se recibió el código de autenticación.');
         return res.status(400).send('No se recibió el código de autenticación');
@@ -33,21 +32,20 @@ router.get('/callback', async (req, res) => {
 
     try {
         console.log('Intercambiando el código por el token de acceso...');
-        const { tokens } = await oauth2Client.getToken(code);  // Intercambia el código por el token
-        console.log('Tokens obtenidos:', tokens);  // Verifica los tokens obtenidos
+        const { tokens } = await oauth2Client.getToken(code);
+        console.log('Tokens obtenidos:', tokens);
 
-        oauth2Client.setCredentials(tokens);  // Establece las credenciales del cliente OAuth2
-        req.session.tokens = tokens;  // Guarda los tokens en la sesión
+        oauth2Client.setCredentials(tokens);
+        req.session.tokens = tokens;
+        console.log('Autenticación exitosa. Tokens guardados en la sesión:', tokens);
 
-        console.log('Autenticación exitosa. Tokens guardados en la sesión:', tokens);  // Verifica que los tokens se guardaron
-
-        // Redirige a la página de carga de Excel
         res.redirect('/excel');
     } catch (error) {
         console.error('Error durante la autenticación de Google:', error.message);
-        console.error('Stack Trace:', error.stack);  // Imprime el error completo para depurar
+        console.error('Stack Trace:', error.stack);
         res.status(500).send('Authentication failed');
     }
 });
+
 
 module.exports = router;
