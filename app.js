@@ -17,14 +17,16 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(fileUpload());
-app.use(session({ secret: 'your_secret_key', resave: false, saveUninitialized: true }));
 
+// Middleware para manejar las cargas de archivos
 app.use(fileUpload({
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB, ajusta según sea necesario
-    safeFileNames: true,
-    preserveExtension: true
+    limits: { fileSize: 50 * 1024 * 1024 }, // Limita el tamaño del archivo a 50MB
+    safeFileNames: true,  // Previene caracteres peligrosos en los nombres de archivo
+    preserveExtension: true  // Conserva la extensión del archivo original
 }));
+
+// Configuración de sesiones
+app.use(session({ secret: 'your_secret_key', resave: false, saveUninitialized: true }));
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -43,4 +45,5 @@ app.listen(PORT, () => {
   console.log(listEndpoints(app));  // Muestra todas las rutas registradas
 });
 
+// Ruta de inicio
 app.get('/', (req, res) => res.render('home'));
