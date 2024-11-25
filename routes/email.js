@@ -157,7 +157,7 @@
                     service: 'gmail',
                     auth: {
                         type: 'OAuth2',
-                        user: process.env.EMAIL_USER,
+                        user: 'mirko13084@gmail.com',
                         clientId: process.env.GOOGLE_CLIENT_ID,
                         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
                         refreshToken: req.session.tokens.refresh_token,
@@ -173,7 +173,7 @@
                     try {
                         console.log(`Enviando correo a: ${email}`);
                         const info = await transporter.sendMail({
-                            from: process.env.EMAIL_USER,
+                            from: 'mirko13084@gmail.com',
                             to: email,
                             subject: 'Validación de correo',
                             text: 'Este es un correo de prueba para validar tu email.',
@@ -211,13 +211,13 @@
             const transporter = nodemailer.createTransport({
                 service: 'gmail',
                 auth: {
-                    user: process.env.EMAIL_USER,
+                    user: 'mirko13084@gmail.com',
                     pass: process.env.EMAIL_PASS,
                 },
             });
 
             const mailOptions = {
-                from: process.env.EMAIL_USER,
+                from: 'mirko13084@gmail.com',
                 to: 'manuel.arango@teamcomunicaciones.com, backoffice3@teamcomunicaciones.com, acruz@teamcomunicaciones.com',
                 subject: 'Validación de Emails',
                 text: `Fecha de envío: ${new Date().toLocaleString()}`,
