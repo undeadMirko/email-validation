@@ -55,13 +55,17 @@ router.get('/validate', async (req, res) => {
     }
 
     req.session.results = { approved, notApproved, bouncing };
-    console.log('Resultados de validación:', req.session.results);
+    console.log('Resultados de validación guardados en la sesión:', req.session.results);  // Debug
     res.redirect('/results');
 });
+
 
 // Envía correos de prueba a los aprobados
 router.get('/send', async (req, res) => {
     const { approved } = req.session.results || { approved: [] };
+
+    // Verificar si la lista approved está vacía
+    console.log('Correos aprobados en la sesión:', approved);  // Debug
 
     if (approved.length === 0) {
         console.log('No hay correos aprobados para enviar.');
@@ -90,7 +94,9 @@ router.get('/send', async (req, res) => {
         },
     });
 
-    req.session.results.bouncing = req.session.results.bouncing || [];
+    console.log('Iniciando el envío de correos...');
+
+    req.session.results.bouncing = req.session.results.bouncing || []; // Asegurar la lista de rebotados
 
     for (const email of approved) {
         try {
@@ -101,10 +107,11 @@ router.get('/send', async (req, res) => {
                 subject: 'Validación de correo',
                 text: 'Este es un correo de prueba para validar tu email.',
             });
+            console.log(`Correo enviado correctamente a: ${email}`);
         } catch (error) {
             console.error(`Error enviando correo a ${email}:`, error.message);
             if (!req.session.results.bouncing.includes(email)) {
-                req.session.results.bouncing.push(email);
+                req.session.results.bouncing.push(email); // Marcar como rebotado si falla el envío
             }
         }
     }
@@ -112,6 +119,7 @@ router.get('/send', async (req, res) => {
     console.log('Envío de correos completado.');
     res.redirect('/results');
 });
+
 
 // Lee los correos rebotados desde Gmail
 router.get('/read-bounced', async (req, res) => {
@@ -158,12 +166,14 @@ router.get('/read-bounced', async (req, res) => {
             }
         }
 
+        console.log('Correos rebotados almacenados en la sesión:', req.session.results.bouncing);  // Debug
         res.redirect('/results');
     } catch (error) {
         console.error('Error leyendo correos rebotados:', error.message);
         res.status(500).send('Error leyendo correos rebotados.');
     }
 });
+
 
 // Exporta los resultados a un archivo Excel y lo envía por correo
 router.get('/export', (req, res) => {
