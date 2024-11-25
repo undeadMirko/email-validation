@@ -120,7 +120,7 @@ router.get('/send', async (req, res) => {
     const { approved } = req.session.results || { approved: [] };
 
     // Verificar si la lista approved está vacía
-    console.log('Correos aprobados en la sesión:', approved);  // Debug
+    console.log('Correos aprobados en la sesión:', approved);  // Depuración
 
     if (approved.length === 0) {
         console.log('No hay correos aprobados para enviar.');
