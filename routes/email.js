@@ -6,6 +6,7 @@ const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 const { google } = require('googleapis');
+const { getAccessToken, authorizeOAuth2 } = require('./authUtils');
 
 // Valida si el correo tiene formato correcto y un dominio con registros MX
 const validateEmail = async (email) => {
@@ -25,25 +26,6 @@ const validateEmail = async (email) => {
 const containsInvalidKeywords = (email) => {
     const keywords = ['no.tiene', 'tiene', 'no.email'];
     return keywords.some(keyword => email.includes(keyword));
-};
-
-// Función para obtener un nuevo access token automáticamente
-const getAccessToken = async (oauth2Client) => {
-    try {
-        if (!oauth2Client.credentials.refresh_token) {
-            throw new Error('No se encontró el refresh_token');
-        }
-
-        const token = await oauth2Client.getAccessToken();
-        console.log('Nuevo Access Token:', token.token);
-        return token.token;
-    } catch (error) {
-        console.error('Error obteniendo el access token:', error.message);
-        if (error.message.includes('invalid_grant')) {
-            throw new Error('El refresh token ha caducado. El usuario necesita reautenticarse.');
-        }
-        throw new Error('No se pudo obtener el access token');
-    }
 };
 
 // Ruta para validar los correos y enviar los aprobados
@@ -81,13 +63,7 @@ router.get('/validate', async (req, res) => {
 
 // Ruta para leer los correos rebotados desde Gmail
 router.get('/read-bounced', async (req, res) => {
-    const oauth2Client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
-        'https://appmail.teamcomunicaciones.com/auth/google/callback'
-    );
-
-    oauth2Client.setCredentials(req.session.tokens);
+    const oauth2Client = authorizeOAuth2(req);
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
@@ -142,16 +118,8 @@ router.get('/send', async (req, res) => {
         return res.redirect('/results');
     }
 
-    const oauth2Client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
-        'https://appmail.teamcomunicaciones.com/auth/google/callback'
-    );
-
-    oauth2Client.setCredentials(req.session.tokens);
-
     try {
-        const accessToken = await getAccessToken(oauth2Client);
+        const accessToken = await getAccessToken(req);
 
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -167,6 +135,7 @@ router.get('/send', async (req, res) => {
         });
 
         console.log('Iniciando el envío de correos...');
+
         req.session.results.bouncing = req.session.results.bouncing || [];
 
         for (const email of approved) {
