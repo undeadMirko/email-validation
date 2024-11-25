@@ -45,16 +45,12 @@
 
         <div class="mt-5">
             <button class="btn btn-primary me-2" onclick="window.location.href='/email/read-bounced';">
-                Validar Correos Rebotados
+                Validar y Enviar Correos Aprobados
             </button>
             <button class="btn btn-success" onclick="window.location.href='/email/export';">
                 Exportar Resultados
             </button>
         </div>
     </div>
-
-    <!-- Verificar el estado de la sesión en results.ejs -->
-<p>Resultados de la sesión:</p>
-<pre><%= JSON.stringify(results, null, 2) %></pre>
 </body>
 </html>
