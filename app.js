@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const session = require('express-session');
 const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
+const listEndpoints = require('express-list-endpoints');  // Importamos el paquete para listar las rutas
 
 dotenv.config();
 
@@ -29,13 +30,11 @@ app.use('/auth', authRoutes);
 app.use('/excel', excelRoutes);
 app.use('/email', emailRoutes);
 
-// Mostrar todas las rutas disponibles
-app._router.stack.forEach((middleware) => {
-  if (middleware.route) {
-    console.log(`${middleware.route.path}`);
-  }
+// Mostrar todas las rutas disponibles usando express-list-endpoints
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+  console.log('Rutas disponibles:');
+  console.log(listEndpoints(app));  // Muestra todas las rutas registradas
 });
 
 app.get('/', (req, res) => res.render('home'));
-
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
