@@ -80,46 +80,52 @@ router.get('/send', async (req, res) => {
 
     oauth2Client.setCredentials(req.session.tokens);
 
-    const accessToken = await oauth2Client.getAccessToken();
+    try {
+        // Verificar si el token de acceso está disponible y válido
+        const accessToken = await oauth2Client.getAccessToken();
+        console.log('Access Token:', accessToken.token);  // Depuración del token
 
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            type: 'OAuth2',
-            user: process.env.EMAIL_USER,
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            refreshToken: req.session.tokens.refresh_token,
-            accessToken,
-        },
-    });
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                type: 'OAuth2',
+                user: process.env.EMAIL_USER,
+                clientId: process.env.GOOGLE_CLIENT_ID,
+                clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+                refreshToken: req.session.tokens.refresh_token,
+                accessToken: accessToken.token,
+            },
+        });
 
-    console.log('Iniciando el envío de correos...');
+        console.log('Iniciando el envío de correos...');
+        req.session.results.bouncing = req.session.results.bouncing || []; // Asegurar la lista de rebotados
 
-    req.session.results.bouncing = req.session.results.bouncing || []; // Asegurar la lista de rebotados
-
-    for (const email of approved) {
-        try {
-            console.log(`Enviando correo de prueba a: ${email}`);
-            await transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: 'Validación de correo',
-                text: 'Este es un correo de prueba para validar tu email.',
-            });
-            console.log(`Correo enviado correctamente a: ${email}`);
-        } catch (error) {
-            console.error(`Error enviando correo a ${email}:`, error.message);
-            if (!req.session.results.bouncing.includes(email)) {
-                req.session.results.bouncing.push(email); // Marcar como rebotado si falla el envío
+        for (const email of approved) {
+            try {
+                console.log(`Enviando correo de prueba a: ${email}`);
+                const info = await transporter.sendMail({
+                    from: process.env.EMAIL_USER,
+                    to: email,
+                    subject: 'Validación de correo',
+                    text: 'Este es un correo de prueba para validar tu email.',
+                });
+                console.log(`Correo enviado correctamente a: ${email}`);
+                console.log('Info del envío:', info);  // Mostrar información detallada del envío
+            } catch (error) {
+                console.error(`Error enviando correo a ${email}:`, error.message);
+                if (!req.session.results.bouncing.includes(email)) {
+                    req.session.results.bouncing.push(email); // Marcar como rebotado si falla el envío
+                }
             }
         }
+
+        console.log('Envío de correos completado.');
+        res.redirect('/results');
+    } catch (error) {
+        console.error('Error obteniendo el Access Token:', error.message);
+        res.status(500).send('Error en la autenticación de Google.');
     }
-
-    console.log('Envío de correos completado.');
-    res.redirect('/results');
 });
-
 
 // Lee los correos rebotados desde Gmail
 router.get('/read-bounced', async (req, res) => {
@@ -173,7 +179,6 @@ router.get('/read-bounced', async (req, res) => {
         res.status(500).send('Error leyendo correos rebotados.');
     }
 });
-
 
 // Exporta los resultados a un archivo Excel y lo envía por correo
 router.get('/export', (req, res) => {
