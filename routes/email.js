@@ -27,6 +27,18 @@ const containsInvalidKeywords = (email) => {
     return keywords.some(keyword => email.includes(keyword));
 };
 
+// Función para obtener un nuevo access token automáticamente
+const getAccessToken = async (oauth2Client) => {
+    try {
+        const token = await oauth2Client.getAccessToken();
+        console.log('Nuevo Access Token:', token.token);
+        return token.token;
+    } catch (error) {
+        console.error('Error obteniendo el access token:', error.message);
+        throw new Error('No se pudo obtener el access token');
+    }
+};
+
 // Ruta para validar los correos y enviar los aprobados
 router.get('/validate', async (req, res) => {
     const emails = req.session.emails || [];
@@ -136,9 +148,8 @@ router.get('/send', async (req, res) => {
     oauth2Client.setCredentials(req.session.tokens);
 
     try {
-        // Verificar si el token de acceso está disponible y válido
-        const accessToken = await oauth2Client.getAccessToken();
-        console.log('Access Token:', accessToken.token);  // Depuración del token
+        // Obtener automáticamente el access token
+        const accessToken = await getAccessToken(oauth2Client);
 
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -148,7 +159,7 @@ router.get('/send', async (req, res) => {
                 clientId: process.env.GOOGLE_CLIENT_ID,
                 clientSecret: process.env.GOOGLE_CLIENT_SECRET,
                 refreshToken: req.session.tokens.refresh_token,
-                accessToken: accessToken.token,
+                accessToken: accessToken, // Usar el nuevo access token
             },
         });
 
