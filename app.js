@@ -56,7 +56,7 @@ require('dotenv').config(); // Carga las variables de entorno del archivo .env
 console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID); 
 console.log('GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET); 
 console.log('GOOGLE_CLIENT_SECRET:', process.env.EMAIL_USER); 
-console.log('GOOGLE_REDIRECT_URI:', process.env.EMAIL_PASS);
+console.log('EMAIL_PASS:', process.env.EMAIL_PASS);
 
 // Si alguna de estas variables está vacía o es undefined, muestra un error y termina la ejecución
 if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REDIRECT_URI) {
