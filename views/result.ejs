@@ -10,27 +10,36 @@
     <h1>Resultados de Validación</h1>
 
     <h2>Aprobados</h2>
-    <ul>
-        <% results.approved.forEach(email => { %>
-            <li><%= email %></li>
-        <% }); %>
-    </ul>
+    <% if (results.approved.length > 0) { %>
+        <ul>
+            <% results.approved.forEach(email => { %>
+                <li><%= email %></li>
+            <% }); %>
+        </ul>
+    <% } else { %>
+        <p>No hay correos aprobados.</p>
+    <% } %>
 
     <h2>No Aprobados</h2>
-    <ul>
-        <% results.notApproved.forEach(email => { %>
-            <li><%= email %></li>
-        <% }); %>
-    </ul>
+    <% if (results.notApproved.length > 0) { %>
+        <ul>
+            <% results.notApproved.forEach(email => { %>
+                <li><%= email %></li>
+            <% }); %>
+        </ul>
+    <% } else { %>
+        <p>No hay correos no aprobados.</p>
+    <% } %>
 
     <h2>Correos Rebotados</h2>
-    <ul>
-        <% results.bouncing.forEach(email => { %>
-            <li><%= email %></li>
-        <% }); %>
-    </ul>
-
-    <button onclick="window.location.href='/email/read-bounced';">Validar Correos Rebotados</button>
-    <button onclick="window.location.href='/email/export';">Exportar Resultados</button>
+    <% if (results.bouncing.length > 0) { %>
+        <ul>
+            <% results.bouncing.forEach(email => { %>
+                <li><%= email %></li>
+            <% }); %>
+        </ul>
+    <% } else { %>
+        <p>No hay correos rebotados.</p>
+    <% } %>
 </body>
 </html>

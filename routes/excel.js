@@ -43,7 +43,12 @@ router.post('/upload', (req, res) => {
             return res.status(400).send('No se encontraron direcciones de correo válidas.');
         }
 
-        // Guardar los correos en la sesión
+        // Inicializar resultados en la sesión
+        req.session.results = {
+            approved: [],
+            notApproved: [],
+            bouncing: [],
+        };
         req.session.emails = emails;
         console.log('Correos extraídos:', emails);
 

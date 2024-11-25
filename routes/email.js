@@ -32,6 +32,7 @@ router.get('/validate', async (req, res) => {
     const bouncing = [];
 
     for (const email of emails) {
+        console.log(`Validando correo: ${email}`);
         if (containsInvalidKeywords(email)) {
             notApproved.push(email);
             continue;
@@ -50,69 +51,8 @@ router.get('/validate', async (req, res) => {
         }
     }
 
-    req.session.results = { approved, notApproved, bouncing }; // Asegúrate de guardar los resultados en la sesión
-    res.redirect('/results'); // Redirige a la página de resultados
-});
-
-router.get('/export', (req, res) => {
-    const { approved, notApproved, bouncing } = req.session.results || {};
-    const workbook = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(approved.map(email => ({ EMAIL: email }))), 'Aprobados');
-    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(notApproved.map(email => ({ EMAIL: email }))), 'No Aprobados');
-    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(bouncing.map(email => ({ EMAIL: email }))), 'Bouncing');
-
-    const filePath = path.join(__dirname, '../results.xlsx');
-    XLSX.writeFile(workbook, filePath);
-
-    // Aquí va la lógica para enviar el archivo por correo
-});
-
-
-router.get('/send', async (req, res) => {
-    const { approved } = req.session.results || {};
-    const oauth2Client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
-         'https://appmail.teamcomunicaciones.com/auth/google/callback'
-    );
-
-    oauth2Client.setCredentials(req.session.tokens);
-
-    const accessToken = oauth2Client.getAccessToken();
-
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            type: 'OAuth2',
-            user: process.env.EMAIL_USER,
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            refreshToken: req.session.tokens.refresh_token,
-            accessToken,
-        },
-    });
-
-    const sendTestEmail = async (email) => {
-        try {
-            await transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: 'Prueba de correo',
-                text: 'Este es un correo de prueba para validar tu email.',
-            });
-        } catch (error) {
-            console.error(`Error al enviar a ${email}: `, error.message);
-            return false;
-        }
-        return true;
-    };
-
-    for (const email of approved) {
-        const success = await sendTestEmail(email);
-        if (!success) req.session.results.bouncing.push(email);
-    }
-
+    req.session.results = { approved, notApproved, bouncing };
+    console.log('Resultados de validación:', req.session.results);
     res.redirect('/results');
 });
 
@@ -128,7 +68,7 @@ router.get('/read-bounced', async (req, res) => {
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
     try {
-        // Listar los correos relacionados con rebotes
+        const approvedEmails = req.session.results.approved || [];
         const response = await gmail.users.messages.list({
             userId: 'me',
             q: 'subject:"Delivery Status Notification" OR subject:"Mail Delivery Subsystem"',
@@ -144,14 +84,13 @@ router.get('/read-bounced', async (req, res) => {
                     id: message.id,
                 });
 
-                // Intentar obtener el correo rebotado desde el mensaje
                 const headers = mail.data.payload.headers;
                 const toHeader = headers.find(header => header.name === 'To');
                 const emailMatch = toHeader ? toHeader.value.match(/<(.+)>/) : null;
 
                 if (emailMatch && emailMatch[1]) {
                     const email = emailMatch[1].toLowerCase();
-                    if (!req.session.results.bouncing.includes(email)) {
+                    if (approvedEmails.includes(email) && !req.session.results.bouncing.includes(email)) {
                         req.session.results.bouncing.push(email);
                         console.log(`Correo rebotado detectado: ${email}`);
                     }
@@ -167,7 +106,6 @@ router.get('/read-bounced', async (req, res) => {
         res.status(500).send('Error leyendo correos rebotados.');
     }
 });
-
 
 router.get('/export', (req, res) => {
     const { approved, notApproved, bouncing } = req.session.results || {};
