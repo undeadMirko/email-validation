@@ -20,7 +20,7 @@ router.get('/login', (req, res) => {
 });
 
 // Ruta de callback que Google llama después de la autenticación
-router.get('/callback', async (req, res) => {
+router.get('/google/callback', async (req, res) => {
     console.log('Callback recibido de Google...');
     console.log('Parámetros de la solicitud:', req.query);  // Verifica los parámetros de la solicitud
 
