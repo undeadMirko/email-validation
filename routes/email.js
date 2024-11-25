@@ -56,6 +56,60 @@ router.get('/validate', async (req, res) => {
     res.redirect('/results');
 });
 
+router.get('/send', async (req, res) => {
+    const { approved } = req.session.results || { approved: [] };
+
+    if (approved.length === 0) {
+        console.log('No hay correos aprobados para enviar.');
+        return res.redirect('/results');
+    }
+
+    const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        'https://appmail.teamcomunicaciones.com/auth/google/callback'
+    );
+
+    oauth2Client.setCredentials(req.session.tokens);
+
+    const accessToken = await oauth2Client.getAccessToken();
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            type: 'OAuth2',
+            user: process.env.EMAIL_USER,
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            refreshToken: req.session.tokens.refresh_token,
+            accessToken,
+        },
+    });
+
+    req.session.results.bouncing = req.session.results.bouncing || []; // Asegurar la lista de rebotados
+
+    for (const email of approved) {
+        try {
+            console.log(`Enviando correo de prueba a: ${email}`);
+            await transporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'Validación de correo',
+                text: 'Este es un correo de prueba para validar tu email.',
+            });
+        } catch (error) {
+            console.error(`Error enviando correo a ${email}:`, error.message);
+            if (!req.session.results.bouncing.includes(email)) {
+                req.session.results.bouncing.push(email); // Marcar como rebotado si falla el envío
+            }
+        }
+    }
+
+    console.log('Envío de correos completado.');
+    res.redirect('/results');
+});
+
+
 router.get('/read-bounced', async (req, res) => {
     const oauth2Client = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
@@ -68,7 +122,7 @@ router.get('/read-bounced', async (req, res) => {
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
     try {
-        const approvedEmails = req.session.results.approved || [];
+        console.log('Buscando correos rebotados...');
         const response = await gmail.users.messages.list({
             userId: 'me',
             q: 'subject:"Delivery Status Notification" OR subject:"Mail Delivery Subsystem"',
@@ -90,7 +144,7 @@ router.get('/read-bounced', async (req, res) => {
 
                 if (emailMatch && emailMatch[1]) {
                     const email = emailMatch[1].toLowerCase();
-                    if (approvedEmails.includes(email) && !req.session.results.bouncing.includes(email)) {
+                    if (!req.session.results.bouncing.includes(email)) {
                         req.session.results.bouncing.push(email);
                         console.log(`Correo rebotado detectado: ${email}`);
                     }
@@ -106,6 +160,7 @@ router.get('/read-bounced', async (req, res) => {
         res.status(500).send('Error leyendo correos rebotados.');
     }
 });
+
 
 router.get('/export', (req, res) => {
     const { approved, notApproved, bouncing } = req.session.results || {};
