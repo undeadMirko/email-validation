@@ -16,7 +16,6 @@ const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.g
 // Ruta para iniciar sesión con Google (redirige al login de Google)
 router.get('/login', (req, res) => {
     console.log('Redirigiendo al login de Google...');
-
     // Generar URL de autenticación con los parámetros adecuados
     const url = oauth2Client.generateAuthUrl({
         access_type: 'offline', // Solicitar un refresh_token
@@ -44,30 +43,22 @@ router.get('/google/callback', async (req, res) => {
         
         // Obtener tokens usando el código recibido
         const { tokens } = await oauth2Client.getToken(code);
+        console.log('Tokens obtenidos desde Google:', tokens); // Log para depurar
 
         // Validar si se recibió el refresh_token
         if (!tokens.refresh_token) {
             console.error('No se recibió el refresh_token:', tokens);
-            throw new Error(
-                'No se recibió el refresh_token. Es posible que el usuario ya haya autorizado previamente.'
-            );
+            throw new Error('No se recibió el refresh_token');
         }
 
-        console.log('Tokens obtenidos:', tokens); // Log para depurar
         oauth2Client.setCredentials(tokens);
-
-        // Guardar tokens en la sesión
-        req.session.tokens = tokens;
-        console.log('Autenticación exitosa. Tokens guardados en la sesión:', tokens);
+        req.session.tokens = tokens; // Guardar tokens en la sesión
+        console.log('Tokens guardados en la sesión:', tokens); // Log para depurar
 
         res.redirect('/excel'); // Redirigir a la ruta deseada
     } catch (error) {
         console.error('Error durante la autenticación de Google:', error.message);
-        console.error('Stack Trace:', error.stack);
-        
-        // Limpiar los tokens si hay un error
-        req.session.tokens = null;
-        
+        req.session.tokens = null; // Limpiar los tokens si hay un error
         res.status(500).send('Authentication failed');
     }
 });
@@ -75,6 +66,7 @@ router.get('/google/callback', async (req, res) => {
 // Ruta para obtener un nuevo access token cuando el token actual haya expirado
 router.get('/refresh-token', async (req, res) => {
     if (!req.session.tokens || !req.session.tokens.refresh_token) {
+        console.error('No se encontró refresh_token en la sesión');
         return res.status(400).send('No se encontró un refresh_token en la sesión');
     }
 
@@ -87,16 +79,14 @@ router.get('/refresh-token', async (req, res) => {
     oauth2Client.setCredentials(req.session.tokens);
 
     try {
+        console.log('Refrescando el token de acceso...');
         const newTokens = await oauth2Client.refreshAccessToken();
         req.session.tokens = newTokens.credentials;
-        console.log('Tokens refrescados:', newTokens.credentials);
+        console.log('Tokens refrescados:', newTokens.credentials); // Log para depurar
         res.json(newTokens.credentials); // Retornar los nuevos tokens
     } catch (error) {
         console.error('Error al refrescar el token de acceso:', error.message);
-        
-        // Limpiar los tokens si no se pueden refrescar
-        req.session.tokens = null;
-        
+        req.session.tokens = null; // Limpiar los tokens si no se pueden refrescar
         res.status(500).send('Error al refrescar el token de acceso');
     }
 });
@@ -104,6 +94,7 @@ router.get('/refresh-token', async (req, res) => {
 // Ruta para enviar un correo utilizando nodemailer y el token de acceso
 router.post('/send', async (req, res) => {
     if (!req.session.tokens || !req.session.tokens.access_token) {
+        console.error('No se encontraron tokens de acceso en la sesión');
         return res.status(400).send('No se encontraron tokens de acceso en la sesión');
     }
 
@@ -116,9 +107,10 @@ router.post('/send', async (req, res) => {
     oauth2Client.setCredentials(req.session.tokens);
 
     try {
-        // Verificar si el token de acceso ha expirado y obtener uno nuevo si es necesario
+        console.log('Verificando el token de acceso...');
         const accessToken = await oauth2Client.getAccessToken();
-        
+        console.log('Token de acceso obtenido:', accessToken.token);
+
         // Configurar el transportador de nodemailer con OAuth2
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -146,10 +138,7 @@ router.post('/send', async (req, res) => {
         res.status(200).send('Correo enviado con éxito');
     } catch (error) {
         console.error('Error al enviar correo:', error.message);
-        
-        // Limpiar los tokens si hay un error al enviar el correo
-        req.session.tokens = null;
-        
+        req.session.tokens = null; // Limpiar los tokens si hay un error al enviar el correo
         res.status(500).send('Error al enviar correo');
     }
 });
