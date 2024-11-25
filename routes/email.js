@@ -30,7 +30,6 @@ const containsInvalidKeywords = (email) => {
 // Función para obtener un nuevo access token automáticamente
 const getAccessToken = async (oauth2Client) => {
     try {
-        // Verificar si hay un refresh_token disponible
         if (!oauth2Client.credentials.refresh_token) {
             throw new Error('No se encontró el refresh_token');
         }
@@ -56,7 +55,7 @@ router.get('/validate', async (req, res) => {
 
     // Validar los correos
     for (const email of emails) {
-        console.log(`Validando correo: ${email}`);  // Debug
+        console.log(`Validando correo: ${email}`);
         if (containsInvalidKeywords(email)) {
             notApproved.push(email);
             continue;
@@ -75,9 +74,8 @@ router.get('/validate', async (req, res) => {
         }
     }
 
-    // Guardamos los resultados de validación en la sesión
     req.session.results = { approved, notApproved, bouncing };
-    console.log('Resultados de validación guardados en la sesión:', req.session.results);  // Debug
+    console.log('Resultados de validación guardados en la sesión:', req.session.results);
     res.redirect('/results');
 });
 
@@ -94,18 +92,18 @@ router.get('/read-bounced', async (req, res) => {
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
     try {
-        console.log('Buscando correos rebotados...');  // Depuración
+        console.log('Buscando correos rebotados...');
         const response = await gmail.users.messages.list({
             userId: 'me',
             q: 'subject:"Delivery Status Notification" OR subject:"Mail Delivery Subsystem"',
         });
 
         const messages = response.data.messages || [];
-        console.log(`Correos de rebote encontrados: ${messages.length}`);  // Depuración
+        console.log(`Correos de rebote encontrados: ${messages.length}`);
 
         for (const message of messages) {
             try {
-                console.log('Procesando mensaje ID:', message.id);  // Depuración
+                console.log('Procesando mensaje ID:', message.id);
                 const mail = await gmail.users.messages.get({
                     userId: 'me',
                     id: message.id,
@@ -127,7 +125,7 @@ router.get('/read-bounced', async (req, res) => {
             }
         }
 
-        console.log('Correos rebotados almacenados en la sesión:', req.session.results.bouncing);  // Debug
+        console.log('Correos rebotados almacenados en la sesión:', req.session.results.bouncing);
         res.redirect('/results');
     } catch (error) {
         console.error('Error leyendo correos rebotados:', error.message);
@@ -138,9 +136,6 @@ router.get('/read-bounced', async (req, res) => {
 // Ruta para enviar los correos aprobados
 router.get('/send', async (req, res) => {
     const { approved } = req.session.results || { approved: [] };
-
-    // Verificar si la lista approved está vacía
-    console.log('Correos aprobados en la sesión:', approved);  // Depuración
 
     if (approved.length === 0) {
         console.log('No hay correos aprobados para enviar.');
@@ -156,7 +151,6 @@ router.get('/send', async (req, res) => {
     oauth2Client.setCredentials(req.session.tokens);
 
     try {
-        // Obtener automáticamente el access token
         const accessToken = await getAccessToken(oauth2Client);
 
         const transporter = nodemailer.createTransport({
@@ -167,16 +161,17 @@ router.get('/send', async (req, res) => {
                 clientId: process.env.GOOGLE_CLIENT_ID,
                 clientSecret: process.env.GOOGLE_CLIENT_SECRET,
                 refreshToken: req.session.tokens.refresh_token,
-                accessToken: accessToken, // Usar el nuevo access token
+                accessToken: accessToken,
             },
+            debug: true, // Activar logs detallados
         });
 
         console.log('Iniciando el envío de correos...');
-        req.session.results.bouncing = req.session.results.bouncing || []; // Asegurar la lista de rebotados
+        req.session.results.bouncing = req.session.results.bouncing || [];
 
         for (const email of approved) {
             try {
-                console.log(`Enviando correo de prueba a: ${email}`);  // Depuración del envío
+                console.log(`Enviando correo a: ${email}`);
                 const info = await transporter.sendMail({
                     from: process.env.EMAIL_USER,
                     to: email,
@@ -184,11 +179,11 @@ router.get('/send', async (req, res) => {
                     text: 'Este es un correo de prueba para validar tu email.',
                 });
                 console.log(`Correo enviado correctamente a: ${email}`);
-                console.log('Info del envío:', info);  // Mostrar información detallada del envío
+                console.log('Info del envío:', info);
             } catch (error) {
                 console.error(`Error enviando correo a ${email}:`, error.message);
                 if (!req.session.results.bouncing.includes(email)) {
-                    req.session.results.bouncing.push(email); // Marcar como rebotado si falla el envío
+                    req.session.results.bouncing.push(email);
                 }
             }
         }
