@@ -9,9 +9,9 @@
 <body>
     <div class="container text-center mt-5">
         <h1>Subir Archivo Excel</h1>
-        <form action="/excel/upload" method="post" enctype="multipart/form-data" class="mt-4">
-            <input type="file" name="file" accept=".xlsx, .xls" required class="form-control">
-            <button type="submit" class="btn btn-success mt-3">Leer Datos</button>
+        <form action="/excel/upload" method="POST" enctype="multipart/form-data">
+            <input type="file" name="file" />
+            <button type="submit">Subir archivo</button>
         </form>
     </div>
 </body>

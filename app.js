@@ -21,7 +21,9 @@ app.use(fileUpload());
 app.use(session({ secret: 'your_secret_key', resave: false, saveUninitialized: true }));
 
 app.use(fileUpload({
-    limits: { fileSize: 0 } // 0 significa sin límite de tamaño de archivo
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB, ajusta según sea necesario
+    safeFileNames: true,
+    preserveExtension: true
 }));
 
 // Routes
