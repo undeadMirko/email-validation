@@ -13,7 +13,7 @@
             <div class="col">
                 <h3>Correos Aprobados</h3>
                 <ul class="list-group">
-                    <% results.approved.forEach(email => { %>
+                    <% (results.approved || []).forEach(email => { %>
                         <li class="list-group-item"><%= email %></li>
                     <% }) %>
                 </ul>
@@ -21,7 +21,7 @@
             <div class="col">
                 <h3>Correos No Aprobados</h3>
                 <ul class="list-group">
-                    <% results.notApproved.forEach(email => { %>
+                    <% (results.notApproved || []).forEach(email => { %>
                         <li class="list-group-item"><%= email %></li>
                     <% }) %>
                 </ul>
@@ -29,7 +29,7 @@
             <div class="col">
                 <h3>Bouncing</h3>
                 <ul class="list-group">
-                    <% results.bouncing.forEach(email => { %>
+                    <% (results.bouncing || []).forEach(email => { %>
                         <li class="list-group-item"><%= email %></li>
                     <% }) %>
                 </ul>
@@ -37,6 +37,8 @@
         </div>
         <div class="text-center mt-4">
             <a href="/email/export" class="btn btn-primary">Exportar Resultados</a>
+            <a href="/" class="btn btn-secondary">Volver al Inicio</a>
+            <a href="/excel" class="btn btn-secondary">Subir Otro Archivo</a>
         </div>
     </div>
 </body>

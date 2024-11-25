@@ -25,6 +25,8 @@ app.use(fileUpload({
     preserveExtension: true  // Conserva la extensión del archivo original
 }));
 
+
+
 // Configuración de sesiones
 app.use(session({ secret: 'your_secret_key', resave: false, saveUninitialized: true }));
 
@@ -37,6 +39,18 @@ const emailRoutes = require('./routes/email');
 app.use('/auth', authRoutes);
 app.use('/excel', excelRoutes);
 app.use('/email', emailRoutes);
+
+app.get('/results', (req, res) => {
+    const results = req.session.results;
+
+    if (!results) {
+        return res.status(400).send('No se encontraron resultados.');
+    }
+
+    res.render('result', { results }); // Renderiza los resultados
+});
+
+
 
 // Mostrar todas las rutas disponibles usando express-list-endpoints
 app.listen(PORT, () => {

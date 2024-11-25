@@ -50,9 +50,24 @@ router.get('/validate', async (req, res) => {
         }
     }
 
-    req.session.results = { approved, notApproved, bouncing };
-    res.redirect('/results');
+    req.session.results = { approved, notApproved, bouncing }; // Asegúrate de guardar los resultados en la sesión
+    res.redirect('/results'); // Redirige a la página de resultados
 });
+
+router.get('/export', (req, res) => {
+    const { approved, notApproved, bouncing } = req.session.results || {};
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(approved.map(email => ({ EMAIL: email }))), 'Aprobados');
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(notApproved.map(email => ({ EMAIL: email }))), 'No Aprobados');
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(bouncing.map(email => ({ EMAIL: email }))), 'Bouncing');
+
+    const filePath = path.join(__dirname, '../results.xlsx');
+    XLSX.writeFile(workbook, filePath);
+
+    // Aquí va la lógica para enviar el archivo por correo
+});
+
 
 router.get('/send', async (req, res) => {
     const { approved } = req.session.results || {};
