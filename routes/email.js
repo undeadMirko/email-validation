@@ -30,11 +30,19 @@ const containsInvalidKeywords = (email) => {
 // Función para obtener un nuevo access token automáticamente
 const getAccessToken = async (oauth2Client) => {
     try {
+        // Verificar si hay un refresh_token disponible
+        if (!oauth2Client.credentials.refresh_token) {
+            throw new Error('No se encontró el refresh_token');
+        }
+
         const token = await oauth2Client.getAccessToken();
         console.log('Nuevo Access Token:', token.token);
         return token.token;
     } catch (error) {
         console.error('Error obteniendo el access token:', error.message);
+        if (error.message.includes('invalid_grant')) {
+            throw new Error('El refresh token ha caducado. El usuario necesita reautenticarse.');
+        }
         throw new Error('No se pudo obtener el access token');
     }
 };
