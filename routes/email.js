@@ -35,7 +35,7 @@ router.get('/validate', async (req, res) => {
     const bouncing = [];
 
     for (const email of emails) {
-        console.log(`Validando correo: ${email}`);
+        console.log(`Validando correo: ${email}`);  // Debug
         if (containsInvalidKeywords(email)) {
             notApproved.push(email);
             continue;
@@ -55,9 +55,10 @@ router.get('/validate', async (req, res) => {
     }
 
     req.session.results = { approved, notApproved, bouncing };
-    console.log('Resultados de validación guardados en la sesión:', req.session.results);  // Depuración
+    console.log('Resultados de validación guardados en la sesión:', req.session.results);  // Debug
     res.redirect('/results');
 });
+
 
 // Envía correos de prueba a los aprobados
 router.get('/send', async (req, res) => {
@@ -101,7 +102,7 @@ router.get('/send', async (req, res) => {
 
         for (const email of approved) {
             try {
-                console.log(`Enviando correo de prueba a: ${email}`);
+                console.log(`Enviando correo de prueba a: ${email}`);  // Depuración del envío
                 const info = await transporter.sendMail({
                     from: process.env.EMAIL_USER,
                     to: email,
@@ -139,17 +140,18 @@ router.get('/read-bounced', async (req, res) => {
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
     try {
-        console.log('Buscando correos rebotados...');
+        console.log('Buscando correos rebotados...');  // Depuración
         const response = await gmail.users.messages.list({
             userId: 'me',
             q: 'subject:"Delivery Status Notification" OR subject:"Mail Delivery Subsystem"',
         });
 
         const messages = response.data.messages || [];
-        console.log(`Correos de rebote encontrados: ${messages.length}`);
+        console.log(`Correos de rebote encontrados: ${messages.length}`);  // Depuración
 
         for (const message of messages) {
             try {
+                console.log('Procesando mensaje ID:', message.id);  // Depuración
                 const mail = await gmail.users.messages.get({
                     userId: 'me',
                     id: message.id,
