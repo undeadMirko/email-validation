@@ -120,7 +120,7 @@ router.get('/read-bounced', async (req, res) => {
     const oauth2Client = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,
-         'https://appmail.teamcomunicaciones.com/auth/google/callback'
+        'https://appmail.teamcomunicaciones.com/auth/google/callback'
     );
 
     oauth2Client.setCredentials(req.session.tokens);
@@ -128,31 +128,46 @@ router.get('/read-bounced', async (req, res) => {
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
     try {
+        // Listar los correos relacionados con rebotes
         const response = await gmail.users.messages.list({
             userId: 'me',
             q: 'subject:"Delivery Status Notification" OR subject:"Mail Delivery Subsystem"',
         });
 
         const messages = response.data.messages || [];
+        console.log(`Correos de rebote encontrados: ${messages.length}`);
 
         for (const message of messages) {
-            const mail = await gmail.users.messages.get({
-                userId: 'me',
-                id: message.id,
-            });
+            try {
+                const mail = await gmail.users.messages.get({
+                    userId: 'me',
+                    id: message.id,
+                });
 
-            const payload = mail.data.payload.headers.find(header => header.name === 'To');
-            if (payload) {
-                const email = payload.value.match(/<(.+)>/)[1];
-                req.session.results.bouncing.push(email);
+                // Intentar obtener el correo rebotado desde el mensaje
+                const headers = mail.data.payload.headers;
+                const toHeader = headers.find(header => header.name === 'To');
+                const emailMatch = toHeader ? toHeader.value.match(/<(.+)>/) : null;
+
+                if (emailMatch && emailMatch[1]) {
+                    const email = emailMatch[1].toLowerCase();
+                    if (!req.session.results.bouncing.includes(email)) {
+                        req.session.results.bouncing.push(email);
+                        console.log(`Correo rebotado detectado: ${email}`);
+                    }
+                }
+            } catch (error) {
+                console.error(`Error procesando mensaje ID ${message.id}:`, error.message);
             }
         }
+
+        res.redirect('/results');
     } catch (error) {
         console.error('Error leyendo correos rebotados:', error.message);
+        res.status(500).send('Error leyendo correos rebotados.');
     }
-
-    res.redirect('/results');
 });
+
 
 router.get('/export', (req, res) => {
     const { approved, notApproved, bouncing } = req.session.results || {};
