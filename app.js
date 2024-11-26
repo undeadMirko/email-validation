@@ -59,7 +59,7 @@ console.log('GOOGLE_CLIENT_SECRET:', process.env.EMAIL_USER);
 console.log('EMAIL_PASS:', process.env.EMAIL_PASS);
 
 // Si alguna de estas variables está vacía o es undefined, muestra un error y termina la ejecución
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REDIRECT_URI) {
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.EMAIL_PASS || !process.env.EMAIL_USER) {
     console.error("Falta alguna de las credenciales de Google en el archivo .env.");
     process.exit(1); // Detiene la ejecución si no se encuentran las variables
 }
