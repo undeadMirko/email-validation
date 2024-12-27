@@ -55,7 +55,6 @@ const getAccessToken = async (oauth2Client) => {
     }
 };
 
-
 // Ruta para validar los correos y enviar los aprobados
 router.get('/validate', async (req, res) => {
     const emails = req.session.emails || [];
@@ -75,12 +74,7 @@ router.get('/validate', async (req, res) => {
         if (!isValid) {
             notApproved.push(email);
         } else {
-            const domain = email.split('@')[1];
-            if (!['hotmail.com', 'gmail.com', 'outlook.com', 'outlook.es', 'yahoo.com'].includes(domain)) {
-                notApproved.push(email);
-            } else {
-                approved.push(email);
-            }
+            approved.push(email);
         }
     }
 
@@ -227,7 +221,7 @@ router.get('/export', (req, res) => {
 
     const mailOptions = {
         from: 'mirko13084@gmail.com', // Cambiar a tu correo real
-        to: 'manuel.arango@teamcomunicaciones.com, backoffice3@teamcomunicaciones.com, acruz@teamcomunicaciones.com',
+        to: 'mpalacio@teamcomunicaciones.com, backoffice3@teamcomunicaciones.com, acruz@teamcomunicaciones.com', 
         subject: 'Validación de Emails',
         text: `Fecha de envío: ${new Date().toLocaleString()}`,
         attachments: [{ filename: 'results.xlsx', path: filePath }],
